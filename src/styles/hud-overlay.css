@@ -1,0 +1,23 @@
+.hud-overlay {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid #333;
+  padding: 10px;
+  border-radius: 8px;
+  font-family: sans-serif;
+}
+
+progress {
+  width: 200px;
+  height: 20px;
+  accent-color: green;
+}
+
+.feedback {
+  margin-top: 8px;
+  font-size: 16px;
+  color: #333;
+}
