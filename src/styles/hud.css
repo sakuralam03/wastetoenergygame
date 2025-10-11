@@ -3,6 +3,7 @@
   top: 10px;
   left: 10px;
   font-family: 'Inter', sans-serif;
+  min-height: 80px; /* ensures layout doesn't collapse */
 }
 .bin-meter {
   width: 120px;
@@ -19,4 +20,20 @@
 .score {
   font-size: 14px;
   margin-bottom: 8px;
+}
+.upgrade-btn {
+  margin-top: 100px; /* ⬅️ Increase this to push it lower */
+  padding: 6px 12px;
+  font-size: 14px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+
+.upgrade-btn:hover {
+  background-color: #0056b3;
 }

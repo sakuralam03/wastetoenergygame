@@ -40,7 +40,7 @@ export default function App() {
           <HUDOverlay
             bin={{ meter: 60, state: 'half' }}
             player={{ score: 120 }}
-            onUpgrade={() => console.log('Upgrade clicked')}
+              onUpgrade={() => phaserScene?.applyUpgradeEffects()}
           />
         </>
       )}

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import Player from './entities/player';
 import { trashItems, classifyTrash } from './logic/Trashmanager';
+import { upgrades } from '../config/upgrades.js';
 import '../styles/theme.css';
 
 export default class GameScene extends Phaser.Scene {
@@ -22,14 +23,32 @@ export default class GameScene extends Phaser.Scene {
   }
 
   create() {
+    this.input.enabled = true;
+
     this.player = new Player(this, 100, 100);
     this.player.score = 0;
+    this.player.maxBinMeter = 100;
+    this.playerSpeed = 200;
+    this.upgradesPurchased = {
+      binCapacity: false,
+      movementSpeed: false
+    };
+
+    
 
     // HUD
     this.meterBar = this.add.graphics();
     this.meterText = this.add.text(20, 45, 'Bin: 0%', { fontSize: '14px', fill: '#000' });
     this.feedbackText = this.add.text(20, 70, '', { fontSize: '16px', fill: '#333' });
     this.scoreText = this.add.text(20, 100, 'Score: 0', { fontSize: '16px', fill: '#000' });
+
+    this.upgradeText = this.add.text(20, 140, 'Upgrades Available!', {
+      fontSize: '16px', fill: '#007BFF'
+    }).setInteractive().setVisible(false);
+
+    this.upgradeText.on('pointerdown', () => {
+      this.showUpgradeOptions();
+    });
 
     this.events.on('meterUpdated', (value) => {
       this.meterBar.clear();
@@ -48,6 +67,9 @@ export default class GameScene extends Phaser.Scene {
 
     this.events.on('scoreUpdated', (score) => {
       this.scoreText.setText(`Score: ${score}`);
+      if (score >= 250) {
+        this.upgradeText.setVisible(true);
+      }
     });
 
     // Movement keys
@@ -84,19 +106,18 @@ export default class GameScene extends Phaser.Scene {
   }
 
   createDropZone(x, y, expectedBinType, label) {
-    const zone = this.add.zone(x, y, 64, 64).setOrigin(0);
+    const zone = this.add.zone(1100, y, 64, 64).setOrigin(0);
     this.physics.world.enable(zone);
 
-    const visual = this.add.rectangle(1200, y, 64, 64, 0x4caf50).setOrigin(0);
+    const visual = this.add.rectangle(1100, y, 64, 64, 0x4caf50).setOrigin(0);
     visual.setStrokeStyle(2, 0x000000);
     visual.setAlpha(0.4);
-this.add.text(1200, y - 20, 'Drop Bin Here', {
 
-  fontSize: '12px',
-  fill: '#000',
-  fontFamily: 'sans-serif'
-});
-
+    this.add.text(1100, y - 20, 'Drop Bin Here', {
+      fontSize: '12px',
+      fill: '#000',
+      fontFamily: 'sans-serif'
+    });
 
     this.physics.add.overlap(this.player.sprite, zone, () => {
       if (this.canDropBin && this.player.isBinFull()) {
@@ -107,51 +128,77 @@ this.add.text(1200, y - 20, 'Drop Bin Here', {
         } else {
           this.showScoreFeedback(`❌ Wrong bin for ${label}!`);
         }
+      } else if (!this.player.isBinFull()) {
+        this.showScoreFeedback('❌ Bin not full yet!');
       }
     });
   }
-  
-spawnTrash() {
-  this.trashGroup = this.physics.add.group();
-  const shopZones = [120, 300, 480];
 
-  trashItems.forEach(item => {
-    let x, y, attempts = 0;
-    let overlap = true;
+  showUpgradeOptions() {
+    const yStart = 170;
+    let offset = 0;
 
-    while (overlap && attempts < 50) {
-      x = Phaser.Math.Between(100, 700);
-      y = Phaser.Math.Between(100, 500);
-      overlap = this.trashGroup.getChildren().some(existing => {
-        const dx = existing.x - x;
-        const dy = existing.y - y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        return distance < 40; // Minimum spacing between trash
-      });
+    Object.entries(upgrades).forEach(([key, { name, cost, apply }]) => {
+      if (!this.upgradesPurchased[key] && this.player.score >= cost) {
+        const btn = this.add.text(20, yStart + offset, `Buy ${name} (${cost} pts)`, {
+          fontSize: '14px',
+          fill: '#000',
+          backgroundColor: '#fff',
+          padding: { x: 6, y: 4 }
+        }).setInteractive();
 
-      // Avoid shop zones
-      if (shopZones.some(shopY => Math.abs(y - shopY) < 80)) {
-        overlap = true;
+        btn.on('pointerdown', () => {
+          apply(this);
+          this.player.score -= cost;
+          this.events.emit('scoreUpdated', this.player.score);
+          this.upgradesPurchased[key] = true;
+          btn.destroy();
+        });
+
+        offset += 30;
+      }
+    });
+  }
+
+  spawnTrash() {
+    this.trashGroup = this.physics.add.group();
+    const shopZones = [120, 300, 480];
+
+    trashItems.forEach(item => {
+      let x, y, attempts = 0;
+      let overlap = true;
+
+      while (overlap && attempts < 50) {
+        x = Phaser.Math.Between(100, 700);
+        y = Phaser.Math.Between(100, 500);
+        overlap = this.trashGroup.getChildren().some(existing => {
+          const dx = existing.x - x;
+          const dy = existing.y - y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          return distance < 40;
+        });
+
+        if (shopZones.some(shopY => Math.abs(y - shopY) < 80)) {
+          overlap = true;
+        }
+
+        attempts++;
       }
 
-      attempts++;
-    }
+      if (!overlap) {
+        const sprite = this.trashGroup.create(x, y, item.key).setScale(0.1);
+        sprite.setData('trashName', item.name);
+        sprite.setInteractive();
+      }
+    });
 
-    if (!overlap) {
-      const sprite = this.trashGroup.create(x, y, item.key).setScale(0.1);
-      sprite.setData('trashName', item.name);
-      sprite.setInteractive();
-    }
-  });
-
-  this.physics.add.overlap(this.player.sprite, this.trashGroup, (player, trash) => {
-    const name = trash.getData('trashName');
-    const type = classifyTrash(name);
-    this.player.feedTrash(type);
-    trash.destroy();
-  });
-}
-
+        this.physics.add.overlap(this.player.sprite, this.trashGroup, (player, trash) => {
+      const name = trash.getData('trashName');
+      const type = classifyTrash(name);
+      this.player.feedTrash(type);
+      trash.destroy();
+    });
+  }
 
   dropOffBin(expectedBinType) {
     if (this.player.isBinFull() && this.player.binType === expectedBinType) {
@@ -161,6 +208,20 @@ spawnTrash() {
       this.events.emit('scoreUpdated', this.player.score);
     } else if (this.player.isBinFull()) {
       this.showScoreFeedback('❌ Wrong shop for this bin!');
+    }
+  }
+
+  applyUpgradeEffects() {
+    if (this.player.score >= 250 && !this.upgradesPurchased.movementSpeed) {
+      this.playerSpeed += 50;
+      this.upgradesPurchased.movementSpeed = true;
+      this.showScoreFeedback('🚀 Speed upgraded!');
+    }
+
+    if (this.player.score >= 250 && !this.upgradesPurchased.binCapacity) {
+      this.player.maxBinMeter += 50;
+      this.upgradesPurchased.binCapacity = true;
+      this.showScoreFeedback('🗑️ Bin capacity upgraded!');
     }
   }
 
@@ -175,7 +236,7 @@ spawnTrash() {
   }
 
   update() {
-    const speed = 200;
+    const speed = this.playerSpeed;
     const moveX =
       (this.cursors.left.isDown || this.wasd.left.isDown) ? -speed :
       (this.cursors.right.isDown || this.wasd.right.isDown) ? speed : 0;
