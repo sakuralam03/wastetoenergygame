@@ -1,0 +1,9 @@
+.shop-zone {
+  border: 2px dashed var(--color-shop-border);
+  padding: 10px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  border-radius: 8px;
+}
+.shop-zone.active {
+  box-shadow: 0 0 10px var(--color-shop-glow);
+}
