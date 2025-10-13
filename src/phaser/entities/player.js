@@ -13,8 +13,8 @@ export default class Player {
     this.maxMeter = 100;
     this.eatingSpeed = 700;
 
-    // Score tracking
-    this.score = 0;
+    // Currency tracking
+    this.money = 0;
   }
 
   // Movement logic
@@ -35,13 +35,11 @@ export default class Player {
     this.binType = binType;
     this.binMeter = 0;
 
-    // Remove old bin sprite if it exists
     if (this.binSprite) {
       this.binSprite.destroy();
       this.binSprite = null;
     }
 
-    // Create new bin sprite above player
     this.binSprite = this.scene.add.sprite(this.sprite.x, this.sprite.y - 32, binType).setScale(0.2);
   }
 
@@ -57,12 +55,10 @@ export default class Player {
       const correctType = this.getExpectedType(this.binType);
       const isCorrect = trashType === correctType;
 
-      // Update meter
       this.binMeter = isCorrect
         ? Math.min(this.binMeter + 20, this.maxMeter)
         : Math.max(this.binMeter - 10, 0);
 
-      // Emit events for HUD updates
       this.scene.events.emit('meterUpdated', this.binMeter);
       this.scene.events.emit('trashFeedback', { correct: isCorrect, type: trashType });
 
@@ -79,7 +75,7 @@ export default class Player {
     return null;
   }
 
-  // Log bin status (can be extended for HUD)
+  // Log bin status
   updateBinState() {
     if (this.binMeter === 0) {
       console.log('🗑️ Bin is empty');
@@ -95,6 +91,11 @@ export default class Player {
     return this.binMeter >= this.maxMeter;
   }
 
+  // Get current bin meter (for reward scaling)
+  getBinMeter() {
+    return this.binMeter || 0;
+  }
+
   // Drop bin and reset state
   dropBin() {
     if (this.binSprite) {
@@ -105,6 +106,7 @@ export default class Player {
     this.binType = null;
     this.binMeter = 0;
 
+    this.scene.events.emit('meterUpdated', 0);
     this.scene.events.emit('binDropped');
     this.updateBinState();
   }

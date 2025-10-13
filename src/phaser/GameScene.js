@@ -26,7 +26,7 @@ export default class GameScene extends Phaser.Scene {
     this.input.enabled = true;
 
     this.player = new Player(this, 100, 100);
-    this.player.score = 0;
+    this.player.money = 0;
     this.player.maxBinMeter = 100;
     this.playerSpeed = 200;
     this.upgradesPurchased = {
@@ -40,7 +40,10 @@ export default class GameScene extends Phaser.Scene {
     this.meterBar = this.add.graphics();
     this.meterText = this.add.text(20, 45, 'Bin: 0%', { fontSize: '14px', fill: '#000' });
     this.feedbackText = this.add.text(20, 70, '', { fontSize: '16px', fill: '#333' });
-    this.scoreText = this.add.text(20, 100, 'Score: 0', { fontSize: '16px', fill: '#000' });
+    this.moneyText = this.add.text(20, 100, 'Money: $0', { fontSize: '16px', fill: '#000' });
+    this.co2Level = 0;
+this.co2Text = this.add.text(20, 170, 'CO₂: 0', { fontSize: '16px', fill: '#000' });
+
 
     this.upgradeText = this.add.text(20, 140, 'Upgrades Available!', {
       fontSize: '16px', fill: '#007BFF'
@@ -65,9 +68,9 @@ export default class GameScene extends Phaser.Scene {
       this.time.delayedCall(2000, () => this.feedbackText.setText(''));
     });
 
-    this.events.on('scoreUpdated', (score) => {
-      this.scoreText.setText(`Score: ${score}`);
-      if (score >= 250) {
+    this.events.on('moneyUpdated', (money) => {
+      this.moneyText.setText(`Money: $${money}`);
+      if (money >= 250) {
         this.upgradeText.setVisible(true);
       }
     });
@@ -105,41 +108,39 @@ export default class GameScene extends Phaser.Scene {
     this.spawnTrash();
   }
 
-  createDropZone(x, y, expectedBinType, label) {
-    const zone = this.add.zone(1100, y, 64, 64).setOrigin(0);
-    this.physics.world.enable(zone);
+createDropZone(x, y, expectedBinType, label) {
+  const zone = this.add.zone(1100, y, 64, 64).setOrigin(0);
+  this.physics.world.enable(zone);
 
-    const visual = this.add.rectangle(1100, y, 64, 64, 0x4caf50).setOrigin(0);
-    visual.setStrokeStyle(2, 0x000000);
-    visual.setAlpha(0.4);
+  const visual = this.add.rectangle(1100, y, 64, 64, 0x4caf50).setOrigin(0);
+  visual.setStrokeStyle(2, 0x000000);
+  visual.setAlpha(0.4);
 
-    this.add.text(1100, y - 20, 'Drop Bin Here', {
-      fontSize: '12px',
-      fill: '#000',
-      fontFamily: 'sans-serif'
-    });
+  this.add.text(1100, y - 20, 'Drop Bin Here', {
+    fontSize: '12px',
+    fill: '#000',
+    fontFamily: 'sans-serif'
+  });
 
-    this.physics.add.overlap(this.player.sprite, zone, () => {
-      if (this.canDropBin && this.player.isBinFull()) {
-        if (this.player.binType === expectedBinType) {
-          this.dropOffBin(expectedBinType);
-          this.canDropBin = false;
-          this.time.delayedCall(3000, () => (this.canDropBin = true));
-        } else {
-          this.showScoreFeedback(`❌ Wrong bin for ${label}!`);
-        }
-      } else if (!this.player.isBinFull()) {
-        this.showScoreFeedback('❌ Bin not full yet!');
+  this.physics.add.overlap(this.player.sprite, zone, () => {
+    if (this.canDropBin) {
+      if (this.player.binType === expectedBinType) {
+        this.dropOffBin(expectedBinType);
+        this.canDropBin = false;
+        this.time.delayedCall(3000, () => (this.canDropBin = true));
+      } else {
+        this.showMoneyFeedback(`❌ Wrong bin for ${label}!`);
       }
-    });
-  }
+    }
+  });
+}
 
   showUpgradeOptions() {
     const yStart = 170;
     let offset = 0;
 
     Object.entries(upgrades).forEach(([key, { name, cost, apply }]) => {
-      if (!this.upgradesPurchased[key] && this.player.score >= cost) {
+      if (!this.upgradesPurchased[key] && this.player.money >= cost) {
         const btn = this.add.text(20, yStart + offset, `Buy ${name} (${cost} pts)`, {
           fontSize: '14px',
           fill: '#000',
@@ -149,8 +150,8 @@ export default class GameScene extends Phaser.Scene {
 
         btn.on('pointerdown', () => {
           apply(this);
-          this.player.score -= cost;
-          this.events.emit('scoreUpdated', this.player.score);
+          this.player.money -= cost;
+          this.events.emit('moneyUpdated', this.player.money);
           this.upgradesPurchased[key] = true;
           btn.destroy();
         });
@@ -200,32 +201,45 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
-  dropOffBin(expectedBinType) {
-    if (this.player.isBinFull() && this.player.binType === expectedBinType) {
-      this.player.score += 50;
+dropOffBin(expectedBinType) {
+  if (this.player.binType === expectedBinType) {
+    const meterValue = this.player.getBinMeter(); // Assume this returns 0–100
+    const reward = Math.floor(meterValue * 0.5); // e.g., $50 for full bin
+
+    if (meterValue > 0) {
+      this.player.money += reward;
       this.player.dropBin();
-      this.showScoreFeedback('+50 points!');
-      this.events.emit('scoreUpdated', this.player.score);
-    } else if (this.player.isBinFull()) {
-      this.showScoreFeedback('❌ Wrong shop for this bin!');
+      this.showMoneyFeedback(`+$${reward} earned!`);
+      this.events.emit('moneyUpdated', this.player.money);
+
+      if (expectedBinType === 'green_bin') {
+        this.co2Level += Math.floor(meterValue * 0.1); // CO₂ scales with bin fill
+        this.co2Text.setText(`CO₂: ${this.co2Level}`);
+      }
+    } else {
+      this.showMoneyFeedback('❌ Bin is empty!');
     }
+  } else {
+    this.showMoneyFeedback('❌ Wrong shop for this bin!');
   }
+}
+
 
   applyUpgradeEffects() {
-    if (this.player.score >= 250 && !this.upgradesPurchased.movementSpeed) {
+    if (this.player.money >= 250 && !this.upgradesPurchased.movementSpeed) {
       this.playerSpeed += 50;
       this.upgradesPurchased.movementSpeed = true;
-      this.showScoreFeedback('🚀 Speed upgraded!');
+      this.showMoneyFeedback('🚀 Speed upgraded!');
     }
 
-    if (this.player.score >= 250 && !this.upgradesPurchased.binCapacity) {
+    if (this.player.money >= 250 && !this.upgradesPurchased.binCapacity) {
       this.player.maxBinMeter += 50;
       this.upgradesPurchased.binCapacity = true;
-      this.showScoreFeedback('🗑️ Bin capacity upgraded!');
+      this.showMoneyFeedback('🗑️ Bin capacity upgraded!');
     }
   }
 
-  showScoreFeedback(message) {
+  showMoneyFeedback(message) {
     const feedback = this.add.text(this.player.sprite.x, this.player.sprite.y - 40, message, {
       fontSize: '18px',
       color: '#4caf50',
