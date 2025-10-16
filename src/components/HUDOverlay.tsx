@@ -1,7 +1,7 @@
 import type { HUDOverlayProps } from '../types/gameTypes';
 import '../styles/hud.css';
 
-const HUDOverlay: React.FC<HUDOverlayProps> = ({ bin, player, onUpgrade }) => {
+const HUDOverlay: React.FC<HUDOverlayProps> = ({ bin, onUpgrade }) => {
   return (
     <div className="hud">
       <div className="bin-meter">
