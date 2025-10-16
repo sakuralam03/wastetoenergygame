@@ -15,8 +15,8 @@ export default class GameScene extends Phaser.Scene {
     this.load.image('yellow_bin', '/assets/bins/yellow_bin.png');
     this.load.image('blue_bin', '/assets/bins/blue_bin.png');
     this.load.image('recycle_shop', 'assets/shops/recycle_shop.jpg');
-    this.load.image('donation_shop', 'assets/shops/donation_shop.jpg');
-    this.load.image('waste_shop', 'assets/shops/waste_shop.jpg');
+    this.load.image('donation_shop', 'assets/shops/donation_shop.png');
+    this.load.image('incineration_plant', 'assets/shops/incineration_plant.jpg');
    this.load.atlas('playerAtlas', '/assets/player/player.png', '/assets/player/player.json');
 
     trashItems.forEach(item => {
@@ -114,17 +114,17 @@ this.co2Text = this.add.text(20, 170, 'CO₂: 0', { fontSize: '16px', fill: '#00
     const shopX = 1400;
     this.canDropBin = true;
 
-    this.recycleShop = this.add.image(shopX, 120, 'recycle_shop').setScale(0.1);
-    this.donationShop = this.add.image(shopX, 300, 'donation_shop').setScale(0.1);
-    this.wasteShop = this.add.image(shopX, 480, 'waste_shop').setScale(0.1);
+    this.recycleShop = this.add.image(shopX, 120, 'recycle_shop').setScale(0.3);
+    this.donationShop = this.add.image(shopX, 300, 'donation_shop').setScale(0.5);
+    this.incinerationPlant = this.add.image(shopX, 480, 'incineration_plant').setScale(0.3);
 
-    this.add.text(shopX - 20, 90, 'Recycle', { fontSize: '14px', fill: '#000' });
-    this.add.text(shopX - 20, 270, 'Donate', { fontSize: '14px', fill: '#000' });
-    this.add.text(shopX - 20, 450, 'Waste', { fontSize: '14px', fill: '#000' });
+    this.add.text(shopX - 20, 50, 'Recycle', { fontSize: '14px', fill: '#000' });
+    this.add.text(shopX - 20, 250, 'Donate', { fontSize: '14px', fill: '#000' });
+    this.add.text(shopX - 20, 430, 'Incineration', { fontSize: '14px', fill: '#000' });
 
     this.createDropZone(shopX - 60, 120, 'blue_bin', 'Recycle Shop');
     this.createDropZone(shopX - 60, 300, 'yellow_bin', 'Donation Shop');
-    this.createDropZone(shopX - 60, 480, 'green_bin', 'Waste Shop');
+    this.createDropZone(shopX - 60, 480, 'green_bin', 'Incineration Plant');
 
     this.spawnTrash();
   }
@@ -208,7 +208,8 @@ createDropZone(x, y, expectedBinType, label) {
       }
 
       if (!overlap) {
-        const sprite = this.trashGroup.create(x, y, item.key).setScale(0.1);
+        const sprite = this.trashGroup.create(x, y, item.key).setScale(item.scale || 0.1);
+
         sprite.setData('trashName', item.name);
         sprite.setInteractive();
       }
