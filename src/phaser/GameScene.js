@@ -91,7 +91,7 @@ this.co2Text = this.add.text(20, 170, 'CO₂: 0', { fontSize: '16px', fill: '#00
 
     this.events.on('moneyUpdated', (money) => {
       this.moneyText.setText(`Money: $${money}`);
-      if (money >= 250) {
+      if (money >= 50) {
         this.upgradeText.setVisible(true);
       }
     });
