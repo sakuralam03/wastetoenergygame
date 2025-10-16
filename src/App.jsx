@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import GameCanvas from './components/GameCanvas';
-import Overlay from './components/Overlay';
+import Overlay from "./components/Overlay";
 import HUDOverlay from './components/HUDOverlay';
 
 import './styles/theme.css';
