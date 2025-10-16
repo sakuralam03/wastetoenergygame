@@ -248,13 +248,13 @@ dropOffBin(expectedBinType) {
 
 
   applyUpgradeEffects() {
-    if (this.player.money >= 250 && !this.upgradesPurchased.movementSpeed) {
+    if (this.player.money >= 100 && !this.upgradesPurchased.movementSpeed) {
       this.playerSpeed += 50;
       this.upgradesPurchased.movementSpeed = true;
       this.showMoneyFeedback('🚀 Speed upgraded!');
     }
 
-    if (this.player.money >= 250 && !this.upgradesPurchased.binCapacity) {
+    if (this.player.money >= 100 && !this.upgradesPurchased.binCapacity) {
       this.player.maxBinMeter += 50;
       this.upgradesPurchased.binCapacity = true;
       this.showMoneyFeedback('🗑️ Bin capacity upgraded!');
