@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import Player from './entities/player';
+import Player from './entities/player.js';
 import { trashItems, classifyTrash } from './logic/Trashmanager';
 import { upgrades } from '../config/upgrades.js';
 import '../styles/theme.css';
@@ -10,19 +10,40 @@ export default class GameScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image('player', '/assets/player/player.jpeg');
-    this.load.image('green_bin', '/assets/bins/green_bin.jpg');
-    this.load.image('yellow_bin', '/assets/bins/yellow_bin.jpg');
-    this.load.image('blue_bin', '/assets/bins/blue_bin.jpg');
+   
+    this.load.image('green_bin', '/assets/bins/green_bin.png');
+    this.load.image('yellow_bin', '/assets/bins/yellow_bin.png');
+    this.load.image('blue_bin', '/assets/bins/blue_bin.png');
     this.load.image('recycle_shop', 'assets/shops/recycle_shop.jpg');
     this.load.image('donation_shop', 'assets/shops/donation_shop.jpg');
     this.load.image('waste_shop', 'assets/shops/waste_shop.jpg');
+   this.load.atlas('playerAtlas', '/assets/player/player.png', '/assets/player/player.json');
+
     trashItems.forEach(item => {
       this.load.image(item.key, item.path);
+     
+
     });
   }
 
   create() {
+   
+   this.anims.create({
+  key: 'player_walk',
+  frames: this.anims.generateFrameNames('playerAtlas', {
+    start: 0,
+    end: 2,
+    zeroPad: 0,
+    prefix: 'player_',
+    suffix: '.png'
+  }),
+  frameRate: 6,
+  repeat: -1
+});
+
+   
+   
+   
     this.input.enabled = true;
 
     this.player = new Player(this, 100, 100);

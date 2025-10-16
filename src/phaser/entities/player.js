@@ -2,9 +2,10 @@ export default class Player {
   constructor(scene, x, y) {
     this.scene = scene;
 
-    // Create player sprite with physics
-    this.sprite = scene.physics.add.sprite(x, y, 'player').setScale(0.2);
+    // Create player sprite using texture atlas
+    this.sprite = scene.physics.add.sprite(x, y, 'playerAtlas', 'player_0.png').setScale(0.5);
     this.sprite.setCollideWorldBounds(true);
+    this.sprite.play('player_walk');
 
     // Bin state
     this.binType = null;
@@ -17,9 +18,17 @@ export default class Player {
     this.money = 0;
   }
 
-  // Movement logic
+  // Movement logic with animation control
   setVelocity(x, y) {
     this.sprite.setVelocity(x, y);
+
+    // Animate only when moving
+    if (x !== 0 || y !== 0) {
+      this.sprite.play('player_walk', true);
+    } else {
+      this.sprite.stop();
+      this.sprite.setTexture('playerAtlas', 'player_0.png');
+    }
 
     // Keep bin sprite visually attached
     if (this.binSprite) {
